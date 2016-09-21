@@ -33,9 +33,7 @@ use IO::Socket::INET;
 our $VERSION = 2.0;
 use IO::Handle;
 use IO::Select;
-#use IPC::System::Simple qw (system capture);
-#debug only
-#use Sys::Syslog;
+
 
 
 # skeleton config parameters
@@ -71,8 +69,7 @@ sub onInit {
 
 	#open $OUTFILE, ">>/tmp/logfile" or die $!;
 	#$OUTFILE->autoflush(1);
-	#openlog("send.pl", "ndelay,pid", "local0");
-	#syslog("info", "Программа запущена");
+	
 }
 
 #to global
@@ -94,18 +91,15 @@ sub onReceive {
 	#	suggest NOT to use any further buffering, as we do not know when the
 	#	next message will arrive. It may be in a nanosecond from now, but it
 	#	may also be in three hours...
-	#syslog("info","onRecive enter");
-	#syslog("info","onRecive args: @_");
+	
 	foreach(@_ ) {
-			#syslog("info", "value of param: $_ " );
-			#кишки старого скрипта
-			#$message = join(' ', @_)   || die
+			
+			#кишки старого скрипта https://habrahabr.ru/company/zabbix/blog/252915/
+			
 			$message = $_   || die
 				"Syslog message required as an argument\n";  #Grab syslog message from rsyslog
 
-			#syslog("info", "Получил");
-			#syslog("info", $message);
-			#my $message = push @ARGV   || die
+			
 			if ( $debug > 0 ) { print Dumper @_; };
 
 			#get ip from message
@@ -355,8 +349,7 @@ sub zabbix_send {
         if ( $debug > 0 ) { print "no answer from zabbix server\n"; }
     }
     $sock->close();
-#syslog("info", "результат");
-#syslog("info", $result);
+
 
     return;
 }
@@ -368,8 +361,7 @@ sub onExit {
 	#	close files, handles, disconnect from systems...). This is
 	#	being called immediately before exiting.
 	#close($OUTFILE);
-	#syslog("info", "Программа завершила выполнение");
-	#closelog();
+	
 }
 
 #-------------------------------------------------------
@@ -382,45 +374,38 @@ $STDIN = IO::Select->new();
 $STDIN->add(\*STDIN);
 
 # Enter main Loop
-my $i = 0;
+
 my $keepRunning = 1; 
 while ($keepRunning) {
 	my @msgs; 
 	my $stdInLine; 
 	my $msgsInBatch = 0; 
-	#syslog("info", "loop");
-	#syslog("info", $i);
-	$i++;
 	while ($keepRunning) {
 		#sleep(1);
 		# We seem to have not timeout for select - or do we?
 		if ($STDIN->can_read($pollPeriod)) {
-			#syslog("info", "Can_Read uslovie");
 			$stdInLine = <STDIN>;
 			# Catch EOF, run onRecieve one last time and exit
 			if (eof()){
 				$keepRunning = 0;
-				#syslog("info", "EOF");
+				
 
 				last;
 			}
 			if (length($stdInLine) > 0) {
-				#syslog("info", "stdinline >0 ");
+				
 
 				push (@msgs, $stdInLine); 
 
 				$msgsInBatch++;
-				#printf ($msgsInBatch);	 
 				if ($msgsInBatch >= $maxAtOnce) {
-					#syslog("info", ">maxAtOnce");
-
+				
 					last;
 				}
 			}
 		}
 	}
 	
-	#syslog("info", "Call onRecive");
 	onReceive(@msgs);
 }
 
